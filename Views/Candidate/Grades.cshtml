@@ -1,0 +1,84 @@
+﻿@{
+    ViewData["Title"] = "Manage Grades";
+}
+
+<div class="container mt-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-trophy me-2"></i> Final Grade Entry</h5>
+            <span class="badge bg-light text-dark" id="courseLabel">Loading Course...</span>
+        </div>
+        <div class="card-body">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Username</th>
+                        <th width="200px">Total Marks</th>
+                    </tr>
+                </thead>
+                <tbody id="gradeList">
+                    <tr><td colspan="3" class="text-center">Loading students...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-end">
+            <button class="btn btn-secondary" onclick="history.back()">Back</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const assignId = urlParams.get('assignmentId');
+
+        $(document).ready(function() {
+            if (!assignId) { window.location.href = '/Candidate/Dashboard'; return; }
+            loadGradeSheet();
+        });
+
+        function loadGradeSheet() {
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ operaid: 18, assignmentId: parseInt(assignId) }),
+                success: function(res) {
+                    if(res.success) {
+                        let html = res.data.map(s => `
+                            <tr>
+                                <td>${s.firstName} ${s.lastName}</td>
+                                <td><code>${s.username}</code></td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control" value="${s.marks ?? ''}"
+                                               onchange="saveMark(${s.enrollmentId}, this.value)" placeholder="0.00">
+                                        <span class="input-group-text"><i class="bi bi-check-lg text-success"></i></span>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('');
+                        $('#gradeList').html(html || '<tr><td colspan="3">No students found.</td></tr>');
+                    }
+                }
+            });
+        }
+
+        function saveMark(enrollId, val) {
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    operaid: 19,
+                    enrollmentId: enrollId,
+                    marks: parseFloat(val)
+                }),
+                success: function(res) {
+                    if(!res.success) alert("Failed to save mark.");
+                }
+            });
+        }
+    </script>
+}

@@ -1,0 +1,479 @@
+﻿@{
+    ViewData["Title"] = "Users & Roles";
+}
+
+<div class="container mt-4">
+    <h2 class="text-warning"><i class="bi bi-shield-lock-fill me-2"></i>Users & Roles</h2>
+    <hr />
+
+    <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#nav-user-list">System Users</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-users">Register Staff</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-create-type">Create User Type</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-rbac">Menu Mapping</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-menu">Create Menu</button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-4" id="adminTabsContent">
+        <div class="tab-pane fade show active" id="nav-user-list">
+            <div class="card shadow border-0">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i> System Users</h5>
+                    <div class="input-group input-group-sm" style="width: 250px;">
+                        <input type="text" id="userSearch" class="form-control" placeholder="Search users..." onkeyup="filterUserTable()">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="userTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Contact</th>
+                                    <th class="text-end px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userListBody">
+                                <tr><td colspan="5" class="text-center py-4">Loading users...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="nav-users">
+            <div class="card border-success shadow-sm">
+                <div class="card-body">
+                    <h5><i class="bi bi-person-plus"></i> Register Faculty/Officer</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">First Name</label>
+                            <input type="text" id="admFN" class="form-control" />
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" id="admLN" class="form-control" />
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Role</label>
+                            <select id="admin-admRole" class="form-select"></select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="admEmail" class="form-control" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" id="admUser" class="form-control" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Temporary Password</label>
+                            <input type="password" id="admPass" class="form-control" value="Default123!" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Phone No</label>
+                            <input type="text" id="admPhone" class="form-control" value="000-000-0000" />
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="adminCreateUser()">Create Account</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="nav-create-type">
+            <div class="card border-warning col-md-6 shadow-sm">
+                <div class="card-body">
+                    <h5><i class="bi bi-shield-lock-fill"></i> Define New User Type</h5>
+                    <div class="mb-3">
+                        <label class="form-label text-dark fw-bold">User Type Name</label>
+                        <input type="text" id="newUserTypeName" class="form-control" placeholder="e.g. Registrar, HOD, Guest" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-dark fw-bold">Username Prefix</label>
+                        <input type="text" id="newUserPrefix" class="form-control" placeholder="e.g. reg- or gst-" />
+                    </div>
+                    <button class="btn btn-warning w-100 shadow-sm" onclick="saveNewUserType()">
+                        <i class="bi bi-plus-lg me-1"></i> Add New Role
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="nav-rbac">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card border-primary shadow-sm mb-3">
+                        <div class="card-body">
+                            <h5><i class="bi bi-person-badge"></i> 1. Select Role</h5>
+                            <select id="admin-mapRole" class="form-select form-select-lg" onchange="renderMappingTable()"></select>
+                        </div>
+                    </div>
+                    <button class="btn btn-success btn-lg w-100 shadow" onclick="saveMapping()">
+                        <i class="bi bi-save me-2"></i>Save Permissions
+                    </button>
+                </div>
+                <div class="col-md-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <i class="bi bi-list-check me-2"></i> 2. Assign Menu Access
+                        </div>
+                        <div class="table-responsive" style="max-height: 500px;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="50">Allow</th>
+                                        <th>Menu Name</th>
+                                        <th>URL Path</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mappingTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="nav-menu">
+            <div class="card border-info col-md-6 shadow-sm">
+                <div class="card-body">
+                    <h5><i class="bi bi-plus-circle"></i> Create New System Route</h5>
+                    <div class="mb-3">
+                        <label class="form-label">Display Name</label>
+                        <input type="text" id="newMenuName" class="form-control" placeholder="Course List" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">URL Path</label>
+                        <input type="text" id="newMenuUrl" class="form-control" placeholder="/Candidate/Courses" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Icon (Bootstrap Icon Class)</label>
+                        <input type="text" id="newMenuIcon" class="form-control" placeholder="bi-book" />
+                    </div>
+                    <button class="btn btn-info w-100" onclick="createMenu()">Save Menu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Edit User Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit_Id" />
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">First Name</label>
+                        <input type="text" id="edit_FirstName" class="form-control" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" id="edit_LastName" class="form-control" />
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="edit_Email" class="form-control" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Phone No</label>
+                        <input type="text" id="edit_Phone" class="form-control" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">User Role</label>
+                        <select id="edit_UserTypeId" class="form-select">
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateUser()">Update Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let allMenus = [];
+        let allMappings = [];
+        let allUsersData = [];
+
+        $(document).ready(function() {
+            loadAdminData();
+            loadUsers();
+        });
+
+        function handleAjaxError(xhr) {
+            alert("System Error (" + xhr.status + "): The request could not be completed.");
+        }
+
+        // --- Data Loading ---
+        function loadAdminData() {
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ operaid: 10 }),
+                success: function(res) {
+                    if(res.success) {
+                        allMenus = res.menus.map(m => ({
+                            menuId: m.menuId || m.MenuId,
+                            menuName: m.menuName || m.MenuName,
+                            url: m.url || m.Url,
+                            icon: m.icon || m.Icon
+                        }));
+                        allMappings = res.mappings.map(m => ({
+                            userTypeId: m.userTypeId || m.UserTypeId,
+                            menuId: m.menuId || m.MenuId
+                        }));
+                        let roleHtml = res.roles.map(r => {
+                            let id = r.userTypeId || r.UserTypeId;
+                            let name = r.typeName || r.TypeName;
+                            return `<option value="${id}">${name}</option>`;
+                        }).join('');
+                        $('#admin-mapRole, #admin-admRole').html(roleHtml);
+                        renderMappingTable();
+                    }
+                },
+                error: handleAjaxError
+            });
+        }
+
+        function renderMappingTable() {
+            const selectedRoleId = parseInt($('#admin-mapRole').val());
+            let html = '';
+            allMenus.forEach(menu => {
+                const isChecked = allMappings.some(m =>
+                    parseInt(m.userTypeId) === selectedRoleId && parseInt(m.menuId) === parseInt(menu.menuId)
+                );
+                html += `<tr>
+                    <td class="text-center"><input type="checkbox" class="form-check-input menu-chk" value="${menu.menuId}" ${isChecked ? 'checked' : ''}></td>
+                    <td><i class="${menu.icon || 'bi bi-circle'} me-2 text-primary"></i><span class="fw-bold">${menu.menuName}</span></td>
+                    <td><code class="text-info small">${menu.url}</code></td>
+                </tr>`;
+            });
+            $('#mappingTableBody').html(html);
+        }
+
+        function loadUsers() {
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ operaid: 20 }),
+                success: function(res) {
+                    if (res.success) {
+                        allUsersData = res.data;
+                        let rows = res.data.map(u => {
+                            let role = u.RoleName || 'Student';
+                            let badgeClass = role === 'Admin' ? 'bg-warning text-dark' : (role === 'Faculty' ? 'bg-success' : 'bg-primary');
+                            return `<tr>
+                                <td class="ps-4"><div class="fw-bold">${u.FirstName} ${u.LastName}</div><small class="text-muted">Joined: ${u.JoinedDate}</small></td>
+                                <td><code>${u.Username}</code></td>
+                                <td><span class="badge ${badgeClass}">${role}</span></td>
+                                <td><div class="small"><i class="bi bi-envelope me-1"></i>${u.Email}</div><div class="small text-muted"><i class="bi bi-phone me-1"></i>${u.PhoneNo}</div></td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal(${u.CandidateId})"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${u.CandidateId})"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>`;
+                        }).join('');
+                        $('#userListBody').html(rows || '<tr><td colspan="5" class="text-center">No users found.</td></tr>');
+                    }
+                }
+            });
+        }
+
+        // --- Logic Functions ---
+        function openEditModal(id) {
+            const user = allUsersData.find(u => u.CandidateId === id);
+            if (user) {
+                // 1. Fill basic text fields
+                $('#edit_Id').val(user.CandidateId);
+                $('#edit_FirstName').val(user.FirstName);
+                $('#edit_LastName').val(user.LastName);
+                $('#edit_Email').val(user.Email);
+                $('#edit_Phone').val(user.PhoneNo);
+
+                // 2. Clear and Populate the Role Dropdown dynamically
+                let roleDropdown = $('#edit_UserTypeId');
+                roleDropdown.empty();
+                roleDropdown.append('<option value="">-- Select Role --</option>');
+
+                // Get the roles we already loaded in loadAdminData()
+                // We look at the 'admin-mapRole' dropdown which already has the list
+                $('#admin-mapRole option').each(function() {
+                    let roleId = $(this).val();
+                    let roleName = $(this).text();
+                    roleDropdown.append(`<option value="${roleId}">${roleName}</option>`);
+                });
+
+                // 3. Set the current user's role
+                // Note: Ensure your 'FetchAllUsers' (operaid 20) returns UserTypeId
+                roleDropdown.val(user.UserTypeId);
+
+                // 4. Show the modal
+                new bootstrap.Modal(document.getElementById('editUserModal')).show();
+            }
+        }
+
+        function updateUser() {
+            // 1. Collect the data
+            const data = {
+                operaid: 22, // This matches CrudAction.UpdateUser
+                CandidateId: parseInt($('#edit_Id').val()),
+                FirstName: $('#edit_FirstName').val(),
+                LastName: $('#edit_LastName').val(),
+                Email: $('#edit_Email').val(),
+                PhoneNo: $('#edit_Phone').val(),
+                // ADDED THIS LINE: Capture the role ID from the dropdown
+                UserTypeId: parseInt($('#edit_UserTypeId').val())
+            };
+
+            // Validation to prevent the constraint error before even sending
+            if (!data.UserTypeId || data.UserTypeId === 0) {
+                alert("Please select a valid User Role (Student, Faculty, or Admin).");
+                return;
+            }
+
+            console.log("Sending Update Data:", data);
+
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) {
+                    if (res.success) {
+                        const modalElement = document.getElementById('editUserModal');
+                        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                        if (modalInstance) modalInstance.hide();
+
+                        alert("User updated successfully!");
+                        loadUsers();
+                    } else {
+                        // This will now show the detailed DB error if one occurs
+                        alert("Update failed: " + res.message);
+                    }
+                },
+                error: function(xhr) {
+                    console.error("AJAX Error:", xhr);
+                    alert("An error occurred while communicating with the server.");
+                }
+            });
+        }
+
+        function deleteUser(id) {
+            if (confirm("Are you sure? This will wipe all attendance and enrollment history for this user.")) {
+                $.ajax({
+                    url: '/Candidate/HandleAction',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ operaid: 21, candidateId: id }),
+                    success: function(res) {
+                        if (res.success) loadUsers();
+                    }
+                });
+            }
+        }
+
+        function filterUserTable() {
+            let val = $('#userSearch').val().toLowerCase();
+            $("#userListBody tr").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1)
+            });
+        }
+
+        function saveMapping() {
+            const roleId = parseInt($('#admin-mapRole').val());
+            const selectedIds = [];
+            $('.menu-chk:checked').each(function() { selectedIds.push(parseInt($(this).val())); });
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ operaid: 11, userTypeId: roleId, selectedMenuIds: selectedIds }),
+                success: function(res) { alert(res.message || "Permissions updated!"); loadAdminData(); },
+                error: handleAjaxError
+            });
+        }
+
+        function saveNewUserType() {
+            const typeName = $('#newUserTypeName').val();
+            const prefix = $('#newUserPrefix').val();
+            if(!typeName) return alert("Please enter a name for the user type.");
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ operaid: 29, newUserTypeName: typeName, newUserPrefix: prefix }),
+                success: function(res) {
+                    alert(res.message);
+                    if(res.success) { $('#newUserTypeName, #newUserPrefix').val(''); loadAdminData(); }
+                },
+                error: handleAjaxError
+            });
+        }
+
+        function createMenu() {
+            const data = {
+                operaid: 12,
+                menuName: $('#newMenuName').val(),
+                url: $('#newMenuUrl').val(),
+                icon: $('#newMenuIcon').val()
+            };
+            if(!data.menuName || !data.url) return alert("Please fill in both name and URL.");
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) { alert(res.message); if(res.success) location.reload(); },
+                error: handleAjaxError
+            });
+        }
+
+        function adminCreateUser() {
+            const data = {
+                operaid: 13,
+                firstName: $('#admFN').val(),
+                lastName: $('#admLN').val(),
+                userTypeId: parseInt($('#admin-admRole').val()),
+                email: $('#admEmail').val(),
+                username: $('#admUser').val(),
+                password: $('#admPass').val(),
+                phoneNo: $('#admPhone').val(),
+                dateOfBirth: "2000-01-01"
+            };
+            if(!data.username || !data.email) return alert("Username and Email are required.");
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) { alert(res.message); loadUsers(); },
+                error: handleAjaxError
+            });
+        }
+    </script>
+}

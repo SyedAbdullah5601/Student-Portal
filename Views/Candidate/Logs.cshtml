@@ -1,0 +1,84 @@
+﻿@{
+    ViewData["Title"] = "System Audit Logs";
+}
+
+<div class="container-fluid mt-4">
+    <div class="card shadow border-warning">
+        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+            <h3 class="mb-0 fw-bold"><i class="bi bi-shield-lock"></i> System Audit Trail</h3>
+            <div>
+                <button class="btn btn-sm btn-dark" onclick="loadSystemLogs()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh Data
+                </button>
+                <button class="btn btn-sm btn-outline-dark" onclick="location.href='/Candidate/Dashboard' + location.search">
+                    Back to Dashboard
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="logsTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Action</th>
+                            <th>Status</th>
+                            <th>Details</th>
+                            <th>Role ID</th>
+                            <th>IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-table-body">
+                        <tr><td colspan="6" class="text-center">Loading logs...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            loadSystemLogs();
+        });
+
+        function loadSystemLogs() {
+            // Using 7 for CrudAction.FetchLogs
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ operaid: 7 }),
+                success: function(res) {
+                    if (res.success && res.data.length > 0) {
+                        let html = '';
+                                res.data.forEach(log => {
+            // Fail-safe: Check for lowercase first, fallback to Uppercase
+            let action = log.action || log.Action || "N/A";
+            let status = log.status || log.Status || "Unknown";
+            let details = log.details || log.Details || "";
+            let timestamp = log.timestamp || log.Timestamp;
+            let userRole = log.userRole || log.UserRole || "Guest";
+            let ipAddress = log.ipAddress || log.IpAddress || "0.0.0.0";
+
+            let statusClass = status === 'Success' ? 'bg-success' : (status === 'Failure' ? 'bg-danger' : 'bg-info');
+
+            html += `<tr>
+                <td class="text-nowrap">${timestamp ? new Date(timestamp).toLocaleString() : "N/A"}</td>
+                <td><span class="badge bg-secondary">${action}</span></td>
+                <td><span class="badge ${statusClass}">${status}</span></td>
+                <td><small>${details}</small></td>
+                <td>${userRole}</td>
+                <td><code>${ipAddress}</code></td>
+            </tr>`;
+        });
+                        $('#logs-table-body').html(html);
+                    } else {
+                        $('#logs-table-body').html('<tr><td colspan="6" class="text-center">No logs found.</td></tr>');
+                    }
+                }
+            });
+        }
+    </script>
+}

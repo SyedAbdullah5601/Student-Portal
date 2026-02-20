@@ -1,0 +1,188 @@
+﻿@{
+    ViewData["Title"] = "Student Management";
+}
+
+<style>
+    .att-grid {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+    }
+
+    .att-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: 0.2s;
+        user-select: none;
+    }
+    /* 3 States */
+    .att-neutral {
+        background-color: #e9ecef;
+        color: #6c757d;
+    }
+
+    .att-present {
+        background-color: #198754;
+        color: white;
+        border-color: #198754;
+    }
+
+    .att-absent-active {
+        background-color: #dc3545;
+        color: white;
+        border-color: #dc3545;
+    }
+
+    .week-label {
+        font-size: 9px;
+        color: #666;
+        margin-bottom: 2px;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i> Student Management</h5>
+            <button class="btn btn-success btn-sm" onclick="saveAllChanges()">
+                <i class="bi bi-save me-1"></i> Save All Changes
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle border">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 200px;">Student Name</th>
+                            <th style="width: 120px;">Marks (/100)</th>
+                            <th class="text-center">16-Week Attendance Tracker (Click: Neutral -> Present -> Absent)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const assignmentId = @ViewBag.AssignmentId;
+
+        $(document).ready(function () {
+            loadStudentData();
+        });
+
+        function loadStudentData() {
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ operaid: 16, assignmentId: assignmentId }),
+                success: function (res) {
+                    if (res.success) renderTable(res.data);
+                }
+            });
+        }
+
+        function renderTable(data) {
+            let html = '';
+            if (!data || data.length === 0) {
+                html = '<tr><td colspan="3" class="text-center">No students found.</td></tr>';
+                $('#studentTableBody').html(html);
+                return;
+            }
+
+            data.forEach(s => {
+                let records = s.attendanceRecords || [];
+                let attHtml = '<div class="att-grid">';
+                for (let i = 1; i <= 16; i++) {
+                    let rec = records.find(r => r.weekNumber === i);
+                    let status = rec ? rec.status : "Neutral";
+
+                    let css = "att-neutral";
+                    let char = "-";
+                    if(status === "Present") { css = "att-present"; char = "P"; }
+                    else if(status === "Absent") { css = "att-absent-active"; char = "A"; }
+
+                    attHtml += `
+                        <div class="text-center">
+                            <div class="week-label">${i}</div>
+                            <div class="att-btn ${css}" data-week="${i}" onclick="toggleAttendance(this)">
+                                ${char}
+                            </div>
+                        </div>`;
+                }
+                attHtml += '</div>';
+
+                html += `
+                    <tr data-enrollid="${s.enrollmentId}">
+                        <td>
+                            <div class="fw-bold">${s.firstName} ${s.lastName}</div>
+                            <small class="text-primary">${s.username}</small>
+                        </td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm mark-input" value="${s.marks}" min="0" max="100">
+                        </td>
+                        <td>${attHtml}</td>
+                    </tr>`;
+            });
+            $('#studentTableBody').html(html);
+        }
+
+        function toggleAttendance(el) {
+            const $btn = $(el);
+            if ($btn.hasClass('att-neutral')) {
+                $btn.removeClass('att-neutral').addClass('att-present').text('P');
+            } else if ($btn.hasClass('att-present')) {
+                $btn.removeClass('att-present').addClass('att-absent-active').text('A');
+            } else {
+                $btn.removeClass('att-absent-active').addClass('att-neutral').text('-');
+            }
+        }
+
+        function saveAllChanges() {
+            let payload = [];
+            $('#studentTableBody tr').each(function() {
+                let row = $(this);
+                let details = [];
+                row.find('.att-btn').each(function() {
+                    let status = "";
+                    if ($(this).hasClass('att-present')) status = "Present";
+                    else if ($(this).hasClass('att-absent-active')) status = "Absent";
+
+                    if(status !== "") {
+                        details.push({ weekNumber: $(this).data('week'), status: status });
+                    }
+                });
+
+                payload.push({
+                    enrollmentId: row.data('enrollid'),
+                    marks: parseFloat(row.find('.mark-input').val()) || 0,
+                    attendanceDetails: details
+                });
+            });
+
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    operaid: 19,
+                    assignmentId: assignmentId,
+                    bulkData: JSON.stringify(payload)
+                }),
+                success: function (res) {
+                    if (res.success) alert("Changes saved successfully!");
+                }
+            });
+        }
+    </script>
+}

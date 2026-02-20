@@ -1,0 +1,148 @@
+﻿@{
+    ViewData["Title"] = "Candidate Login";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h4 class="mb-0 fw-bold">Portal Login</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label class="form-label text-white fw-bold small uppercase">User Role</label>
+                            <select id="loginUserType" class="form-select">
+                                <option value="">Loading roles...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-white fw-bold small uppercase">Username</label>
+                            <input type="text" id="loginUser" class="form-control" placeholder="Enter Username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-white fw-bold small uppercase">Password</label>
+                            <input type="password" id="loginPass" class="form-control" placeholder="Enter Password" required>
+                        </div>
+                        <button type="button" id="btnLogin" class="btn btn-primary w-100 py-2 fw-bold">Sign In</button>
+                    </form>
+
+                    <div id="otpSection" style="display:none;">
+                        <div class="text-center mb-3">
+                            <i class="bi bi-envelope-check fs-1 text-info"></i>
+                            <p class="text-white mt-2">Check your email for a 6-digit code.</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-white fw-bold small uppercase">Enter OTP</label>
+                            <input type="text" id="otpInput" class="form-control text-center fs-4" placeholder="000000" maxlength="6">
+                        </div>
+                        <button type="button" id="btnVerifyOtp" class="btn btn-success w-100 py-2 fw-bold">Verify & Login</button>
+
+                        <div class="text-center mt-3">
+                            <button type="button" id="btnResendOtp" class="btn btn-sm btn-outline-info" disabled>
+                                Resend OTP (<span id="timer">30</span>s)
+                            </button>
+                        </div>
+
+                        <button type="button" class="btn btn-link w-100 text-info mt-2" onclick="location.reload()">Back to Login</button>
+                    </div>
+                </div>
+                <div class="card-footer text-center border-top border-secondary py-3">
+                    <small>New candidate? <a href="/Candidate/Register" class="text-info text-decoration-none fw-bold">Register here</a></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            let currentCandidateId = 0;
+
+            // NEW: Fetch roles from DB on page load
+            fetchRoles();
+
+            function fetchRoles() {
+                $.ajax({
+                    url: '/Candidate/HandleAction',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    // Using a manual ID for FetchRoles as discussed, or use your Enum value
+                    data: JSON.stringify({ operaid: 50 }),
+                    success: function(res) {
+                        if (res.success) {
+                            let html = '';
+                            res.data.forEach(role => {
+                                html += `<option value="${role.id}">${role.name}</option>`;
+                            });
+                            $('#loginUserType').html(html);
+                        } else {
+                            $('#loginUserType').html('<option value="">Error loading roles</option>');
+                        }
+                    }
+                });
+            }
+
+            // Step 1: Initial Credential Check
+            $('#btnLogin').on('click', function() {
+                const loginData = {
+                    operaid: 3, // 3 = Login
+                    userTypeId: parseInt($('#loginUserType').val()),
+                    username: $('#loginUser').val(),
+                    password: $('#loginPass').val()
+                };
+
+                $.ajax({
+                    url: '/Candidate/HandleAction',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(loginData),
+                    success: function(res) {
+                        if (res.success && res.step === "otp") {
+                            currentCandidateId = res.candidateId;
+                            $('#loginForm').fadeOut(function() {
+                                $('#otpSection').fadeIn();
+                            });
+                        } else {
+                            alert(res.message || "Invalid credentials.");
+                        }
+                    }
+                });
+            });
+
+            // Step 2: OTP Verification
+            $('#btnVerifyOtp').on('click', function() {
+                const otpData = {
+                    operaid: 6, // 6 = VerifyOtp
+                    candidateId: currentCandidateId,
+                    otpCode: $('#otpInput').val()
+                };
+
+                $.ajax({
+                    url: '/Candidate/HandleAction',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(otpData),
+                    success: function(res) {
+                        if (res.success) {
+                            window.location.href = res.redirectUrl;
+                        } else {
+                            alert(res.message || "Invalid or expired OTP.");
+                        }
+                    }
+                });
+            });
+
+            // "Enter" key handlers
+            $('#loginPass').on('keypress', function(e) {
+                if(e.which === 13) $('#btnLogin').click();
+            });
+
+            $('#otpInput').on('keypress', function(e) {
+                if(e.which === 13) $('#btnVerifyOtp').click();
+            });
+        });
+    </script>
+}

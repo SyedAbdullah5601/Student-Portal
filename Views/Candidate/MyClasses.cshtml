@@ -1,0 +1,80 @@
+﻿@{
+    ViewData["Title"] = "My Classes";
+}
+
+<div class="container mt-5">
+    <div class="card shadow border-0">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold text-primary">
+                <i class="bi bi-person-workspace me-2"></i> My Assigned Classes
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Course Code</th>
+                            <th>Course Name</th>
+                            <th>Section</th>
+                            <th>Students</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="classesTableBody">
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                                <span class="ms-2">Loading your classes...</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            loadMyClasses();
+        });
+
+        function loadMyClasses() {
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ operaid: 14 }), // FetchFacultyCourses
+                success: function (res) {
+                    if (res.success) {
+                        let html = '';
+                        if (res.data.length === 0) {
+                            html = '<tr><td colspan="5" class="text-center text-muted">You are not assigned to any classes yet.</td></tr>';
+                        } else {
+                                res.data.forEach(item => {
+                                    const id = item.assignmentId || item.AssignmentId;
+
+                                    html += `
+                                        <tr>
+                                            <td><span class="badge bg-secondary">${item.courseCode}</span></td>
+                                            <td class="fw-bold">${item.courseName}</td>
+                                            <td>Section ${item.sectionName}</td>
+                                            <td><i class="bi bi-people me-1"></i> ${item.studentCount} Enrolled</td>
+                                            <td class="text-end">
+                                                <a href="/Candidate/StudentManagement?assignmentId=${id}"
+                                                   class="btn btn-primary btn-sm rounded-pill">
+                                                    <i class="bi bi-gear-fill me-1"></i> Student Management
+                                                </a>
+                                            </td>
+                                        </tr>`;
+                                });
+                        }
+                        $('#classesTableBody').html(html);
+                    }
+                }
+            });
+        }
+    </script>
+}

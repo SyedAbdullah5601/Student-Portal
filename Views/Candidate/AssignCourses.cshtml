@@ -1,0 +1,472 @@
+﻿@{
+    ViewData["Title"] = "Course Management";
+}
+
+<div class="container mt-4">
+    <h2 class="text-primary"><i class="bi bi-book-half me-2"></i>Course Management</h2>
+    <hr />
+
+    <ul class="nav nav-tabs" id="courseTab" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="assign-tab" data-bs-toggle="tab" data-bs-target="#assignContent" type="button">
+                Assign Faculty
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="enroll-tab" data-bs-toggle="tab" data-bs-target="#enrollContent" type="button">
+                Student Enrollments
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="create-tab" data-bs-toggle="tab" data-bs-target="#createContent" type="button">
+                Create New Course
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-4" id="courseTabContent">
+        <div class="tab-pane fade show active" id="assignContent" role="tabpanel">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-primary mb-3">
+                        <div class="card-body">
+                            <h5><i class="bi bi-person-plus"></i> Assign Faculty</h5>
+                            <form id="assignmentForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Select Faculty</label>
+                                    <select id="facultyDropdown" class="form-select" required></select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Select Course</label>
+                                    <select id="courseDropdown" class="form-select" required></select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Section Name</label>
+                                    <input type="text" id="sectionName" class="form-control" placeholder="e.g. Morning-A" required>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100 shadow-sm">
+                                    <i class="bi bi-plus-circle me-2"></i>Create Assignment
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-list-ul me-2"></i>Active Assignments</span>
+                            <button class="btn btn-sm btn-outline-light" onclick="loadAssignments()">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="table-responsive" style="max-height: 500px;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Course</th>
+                                        <th>Faculty</th>
+                                        <th>Section</th>
+                                        <th width="100">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="assignmentsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="enrollContent" role="tabpanel">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-info mb-3">
+                        <div class="card-body">
+                            <h5><i class="bi bi-person-plus-fill"></i> Enroll Student</h5>
+                            <form id="enrollmentForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Select Student</label>
+                                    <select id="studentDropdown" class="form-select" required></select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Select Course Section</label>
+                                    <select id="assignmentDropdown" class="form-select" required></select>
+                                </div>
+                                <button type="submit" class="btn btn-info w-100 text-white shadow-sm">
+                                    <i class="bi bi-check-circle me-2"></i>Enroll Student
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-secondary text-white">Manage Enrollments</div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Course</th>
+                                        <th>Faculty</th>
+                                        <th>Section</th>
+                                        <th width="150">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="enrollmentSectionsTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="createContent" role="tabpanel">
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="card shadow-sm border-success">
+                        <div class="card-body">
+                            <h5><i class="bi bi-journal-plus"></i> Add New Course</h5>
+                            <form id="createCourseForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Course Code</label>
+                                    <input type="text" id="newCourseCode" class="form-control" placeholder="e.g. CS-101" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Course Name</label>
+                                    <input type="text" id="newCourseName" class="form-control" placeholder="e.g. Introduction to Programming" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea id="newCourseDesc" class="form-control" rows="2"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100 shadow-sm">Save Course</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white">Existing Courses</div>
+                        <div class="table-responsive" style="max-height: 400px;">
+                            <table class="table table-sm table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th width="80">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="existingCoursesTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="manageEnrollModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-people me-2"></i>Enrolled Students - <span id="modalCourseTitle"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Username</th>
+                            <th>Enrollment Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentListTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            loadInitialData();
+            loadAssignments();
+            loadExistingCourses();
+            loadStudents();
+            loadEnrollmentSections();
+
+            // Handle Course Creation
+            $("#createCourseForm").on("submit", function (e) {
+                e.preventDefault();
+                const payload = {
+                    Operaid: 30, // CreateCourse
+                    NewCourseCode: $("#newCourseCode").val(),
+                    NewCourseName: $("#newCourseName").val(),
+                    NewCourseDescription: $("#newCourseDesc").val()
+                };
+
+                fetch('/Candidate/HandleAction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.success) {
+                        $("#createCourseForm")[0].reset();
+                        loadInitialData();
+                        loadExistingCourses();
+                    }
+                });
+            });
+
+            // Handle Assignment Creation (Faculty to Course)
+            $("#assignmentForm").on("submit", function (e) {
+                e.preventDefault();
+                const payload = {
+                    Operaid: 25, // SaveAssignment
+                    CandidateId: parseInt($("#facultyDropdown").val()),
+                    CourseId: parseInt($("#courseDropdown").val()),
+                    SectionName: $("#sectionName").val()
+                };
+                fetch('/Candidate/HandleAction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Assigned Successfully!");
+                        loadAssignments();
+                        loadEnrollmentSections();
+                        $("#assignmentForm")[0].reset();
+                    } else {
+                        alert(data.message);
+                    }
+                });
+            });
+
+            // NEW: Handle Admin Student Enrollment
+            $("#enrollmentForm").on("submit", function (e) {
+                e.preventDefault();
+                const payload = {
+                    Operaid: 45, // NEW: EnrollStudent
+                    CandidateId: parseInt($("#studentDropdown").val()),
+                    AssignmentId: parseInt($("#assignmentDropdown").val())
+                };
+                fetch('/Candidate/HandleAction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    if(data.success) $("#enrollmentForm")[0].reset();
+                });
+            });
+        });
+
+        function loadInitialData() {
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Operaid: 20 }) // FetchAllUsers
+            })
+            .then(res => res.json())
+            .then(data => {
+                const faculty = data.data.filter(u => u.RoleName === "Faculty");
+                let html = '<option value="">-- Select Faculty --</option>';
+                faculty.forEach(f => { html += `<option value="${f.CandidateId}">${f.FirstName} ${f.LastName}</option>`; });
+                $("#facultyDropdown").html(html);
+            });
+
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Operaid: 26 }) // FetchCourses
+            })
+            .then(res => res.json())
+            .then(data => {
+                let html = '<option value="">-- Select Course --</option>';
+                data.data.forEach(c => { html += `<option value="${c.CourseId}">${c.CourseCode} - ${c.CourseName}</option>`; });
+                $("#courseDropdown").html(html);
+            });
+        }
+
+        function loadStudents() {
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Operaid: 20 }) // FetchAllUsers
+            })
+            .then(res => res.json())
+            .then(data => {
+                const students = data.data.filter(u => u.RoleName === "Student");
+                let html = '<option value="">-- Select Student --</option>';
+                students.forEach(s => { html += `<option value="${s.CandidateId}">${s.FirstName} ${s.LastName} (${s.Username})</option>`; });
+                $("#studentDropdown").html(html);
+            });
+        }
+
+        function loadEnrollmentSections() {
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Operaid: 24 }) // FetchAssignments
+            })
+            .then(res => res.json())
+            .then(data => {
+                let dropdownHtml = '<option value="">-- Select Section --</option>';
+                let tableHtml = '';
+                data.data.forEach(a => {
+                    dropdownHtml += `<option value="${a.AssignmentId}">${a.CourseName} - ${a.SectionName}</option>`;
+                    tableHtml += `<tr>
+                        <td>${a.CourseName}</td>
+                        <td>${a.FacultyName}</td>
+                        <td>${a.SectionName}</td>
+                        <td>
+                            <button onclick="openManageModal(${a.AssignmentId}, '${a.CourseName}')" class="btn btn-sm btn-primary shadow-sm">
+                                <i class="bi bi-people"></i> View Students
+                            </button>
+                        </td>
+                    </tr>`;
+                });
+                $("#assignmentDropdown").html(dropdownHtml);
+                $("#enrollmentSectionsTable").html(tableHtml);
+            });
+        }
+
+        function openManageModal(assignId, courseName) {
+            $("#modalCourseTitle").text(courseName);
+            refreshModalData(assignId);
+            var myModal = new bootstrap.Modal(document.getElementById('manageEnrollModal'));
+            myModal.show();
+        }
+        function refreshModalData(assignId) {
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Operaid: 46, AssignmentId: assignId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                let html = '';
+                data.data.forEach(s => {
+                    html += `<tr>
+                        <td>${s.fullName || s.FullName}</td>
+                        <td>${s.username || s.Username}</td>
+                        <td>${s.date || s.Date}</td>
+                        <td>
+                            <button onclick="deregisterStudent(${s.enrollmentId || s.EnrollmentId}, ${assignId}, '${$("#modalCourseTitle").text()}')" class="btn btn-sm btn-outline-danger">
+                                Remove
+                            </button>
+                        </td>
+                    </tr>`;
+                });
+                $("#studentListTableBody").html(html || '<tr><td colspan="4" class="text-center">No students enrolled.</td></tr>');
+            });
+        }
+
+        function deregisterStudent(enrollId, assignId, courseName) {
+            if (!confirm("Are you sure you want to remove this student?")) return;
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Operaid: 47, EnrollmentId: enrollId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    refreshModalData(assignId);
+                }
+            });
+        }
+
+        function loadExistingCourses() {
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Operaid: 26 })
+            })
+            .then(res => res.json())
+            .then(data => {
+                let html = '';
+                data.data.forEach(c => {
+                    html += `<tr>
+                        <td><strong>${c.CourseCode}</strong></td>
+                        <td>${c.CourseName}</td>
+                        <td>
+                            <button onclick="deleteCourse(${c.CourseId})" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+                });
+                $("#existingCoursesTable").html(html);
+            });
+        }
+
+        function deleteCourse(id) {
+            if (!confirm("Are you sure? This will fail if faculty are assigned to this course.")) return;
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Operaid: 31, CourseId: id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    loadExistingCourses();
+                    loadInitialData();
+                }
+            });
+        }
+
+        function loadAssignments() {
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Operaid: 24 })
+            })
+            .then(res => res.json())
+            .then(data => {
+                let html = '';
+                data.data.forEach(a => {
+                    html += `<tr>
+                        <td>${a.CourseName}</td>
+                        <td>${a.FacultyName}</td>
+                        <td>${a.SectionName}</td>
+                        <td><button onclick="deleteAssignment(${a.AssignmentId})" class="btn btn-sm btn-danger">Delete</button></td>
+                    </tr>`;
+                });
+                $("#assignmentsTableBody").html(html);
+            });
+        }
+
+        function deleteAssignment(id) {
+            if (!confirm("Remove this faculty assignment?")) return;
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Operaid: 27, AssignmentId: id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    loadAssignments();
+                    loadEnrollmentSections();
+                }
+            });
+        }
+    </script>
+}

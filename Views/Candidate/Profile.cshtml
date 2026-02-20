@@ -1,0 +1,185 @@
+﻿@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow border-primary">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="bi bi-person-gear me-2"></i>Edit Personal Info</h4>
+                    <span class="badge bg-light text-primary">ID: @Context.Session.GetInt32("UserId")</span>
+                </div>
+                <div class="card-body p-4">
+                    <form id="profileForm">
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label">First Name</label>
+                                <input type="text" id="firstName" class="form-control" required>
+                                <div id="fnFeedback" class="form-text"></div>
+                            </div>
+                            <div class="col">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" id="lastName" class="form-control" required>
+                                <div id="lnFeedback" class="form-text"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="email" class="form-control" required>
+                            <div id="emailFeedback" class="form-text"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" id="username" class="form-control" readonly disabled>
+                            <small class="text-muted">Username cannot be changed for security.</small>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">New Password (Optional)</label>
+                                <input type="password" id="password" class="form-control" placeholder="Leave blank to keep current">
+                                <span id="pwStatus" class="fw-bold"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Confirm Password</label>
+                                <input type="password" id="confirmPassword" class="form-control">
+                                <div id="matchFeedback" class="form-text"></div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" id="dob" class="form-control" required>
+                            </div>
+                            <div class="col">
+                                <label class="form-label">Phone #</label>
+                                <input type="tel" id="phoneNo" class="form-control" required>
+                                <div id="phoneFeedback" class="form-text"></div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btnUpdate" class="btn btn-success w-100 mt-3 shadow-sm">
+                            <i class="bi bi-check-circle me-2"></i>Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const atSymbol = "@@";
+        const passwordRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[" + atSymbol + "$=&]).{8,12}$");
+        const nameRegex = /^[A-Za-z]+$/;
+        const phoneRegex = /^\d{10,15}$/;
+
+        $(document).ready(function() {
+            loadProfileData();
+
+            $('#profileForm input').on('keyup change blur', validateForm);
+
+            $('#profileForm').on('submit', function(e) {
+                e.preventDefault();
+                updateProfile();
+            });
+        });
+
+                function loadProfileData() {
+            console.log("Fetching profile data for Operaid: 35...");
+
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ operaid: 35 })
+            })
+            .then(res => res.json())
+            .then(res => {
+                console.log("Full JSON Response:", res);
+
+                if(res.success && res.data) {
+                    // Update these to use CAPITAL letters as seen in your console
+                    $('#firstName').val(res.data.FirstName);
+                    $('#lastName').val(res.data.LastName);
+                    $('#email').val(res.data.Email);
+                    $('#username').val(res.data.Username);
+                    $('#phoneNo').val(res.data.PhoneNo);
+                    $('#dob').val(res.data.DateOfBirth);
+
+                    validateForm();
+                }
+            })
+            .catch(err => console.error("Fetch Error:", err));
+        }
+
+        function validateForm() {
+            const fn = $('#firstName').val();
+            const ln = $('#lastName').val();
+            const email = $('#email').val();
+            const passVal = $('#password').val();
+            const confPass = $('#confirmPassword').val();
+            const dob = $('#dob').val();
+            const phone = $('#phoneNo').val();
+
+            const isFnValid = nameRegex.test(fn);
+            const isLnValid = nameRegex.test(ln);
+            const isEmailValid = email.includes(atSymbol) && email.includes('.');
+            const isPhoneValid = phoneRegex.test(phone);
+
+            const isPwValid = passVal === "" || passwordRegex.test(passVal);
+            const isMatch = passVal === confPass;
+
+            $('#fnFeedback').text(fn && !isFnValid ? 'Alphabets only' : '').addClass('text-danger');
+            $('#lnFeedback').text(ln && !isLnValid ? 'Alphabets only' : '').addClass('text-danger');
+            $('#emailFeedback').text(email && !isEmailValid ? 'Invalid email format' : '').addClass('text-danger');
+            $('#phoneFeedback').text(phone && !isPhoneValid ? 'Digits only (10-15)' : '').addClass('text-danger');
+
+            if(passVal.length > 0) {
+                $('#pwStatus').text(isPwValid ? '(Strong)' : '(Weak)')
+                             .toggleClass('text-success', isPwValid).toggleClass('text-danger', !isPwValid);
+                $('#matchFeedback').text(isMatch ? 'Match!' : 'No match').toggleClass('text-success', isMatch).toggleClass('text-danger', !isMatch);
+            } else {
+                $('#pwStatus').text('');
+                $('#matchFeedback').text('');
+            }
+
+            const formIsValid = isFnValid && isLnValid && isEmailValid && isPwValid && isMatch && dob !== "" && isPhoneValid;
+            $('#btnUpdate').prop('disabled', !formIsValid);
+        }
+
+        function updateProfile() {
+            const payload = {
+                operaid: 40,
+                firstName: $('#firstName').val(),
+                lastName: $('#lastName').val(),
+                email: $('#email').val(),
+                password: $('#password').val(),
+                dateOfBirth: $('#dob').val(),
+                phoneNo: $('#phoneNo').val()
+            };
+
+            console.log("Sending Update Payload:", payload);
+
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Update Response:", data);
+                alert(data.message);
+                if(data.success) {
+                    console.log("Update successful. Reloading page...");
+                    location.reload();
+                }
+            })
+            .catch(err => console.error("Update Error:", err));
+        }
+    </script>
+}

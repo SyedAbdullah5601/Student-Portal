@@ -1,0 +1,198 @@
+﻿@{
+    ViewData["Title"] = "Candidate Registration";
+}
+
+<style>
+    /* Makes the date picker icon white and clickable in Darkly theme */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        cursor: pointer;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4 class="mb-0">Student Registration</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form id="regForm">
+                        <input type="hidden" id="userTypeId" value="1" />
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label">First Name</label>
+                                <input type="text" id="firstName" class="form-control" placeholder="Jane" required>
+                                <div id="fnFeedback" class="form-text"></div>
+                            </div>
+                            <div class="col">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" id="lastName" class="form-control" placeholder="Doe" required>
+                                <div id="lnFeedback" class="form-text"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="email" class="form-control" placeholder="name@example.com" required>
+                            <div id="emailFeedback" class="form-text"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Choose Username</label>
+                            <input type="text" id="username" class="form-control" placeholder="User123" required>
+                            <div id="userFeedback" class="form-text"></div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Password</label>
+                                <input type="password" id="password" class="form-control" required>
+                                <small class="form-text text-muted">
+                                    8-12 length, upper & lower, special, & num.
+                                    <span id="pwStatus" class="fw-bold ms-2"></span>
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Confirm Password</label>
+                                <input type="password" id="confirmPassword" class="form-control" required>
+                                <div id="matchFeedback" class="form-text"></div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" id="dob" class="form-control" required>
+                            </div>
+                            <div class="col">
+                                <label class="form-label">Phone #</label>
+                                <input type="tel" id="phoneNo" class="form-control" placeholder="03211234567" required>
+                                <div id="phoneFeedback" class="form-text"></div>
+                            </div>
+                        </div>
+
+                        <button type="button" id="btnRegister" class="btn btn-primary w-100 mt-2" disabled>Register as Student</button>
+                    </form>
+                </div>
+                <div class="card-footer text-center">
+                    <small>Already have an account? <a href="/Candidate/Login">Login here</a></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const atSymbol = "@@";
+        const passwordRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[" + atSymbol + "$=&]).{8,12}$");
+        const nameRegex = /^[A-Za-z]+$/;
+        const phoneRegex = /^\d{10,15}$/;
+
+        function validateForm() {
+            const fn = $('#firstName').val();
+            const ln = $('#lastName').val();
+            const email = $('#email').val();
+            const passVal = $('#password').val();
+            const confPass = $('#confirmPassword').val();
+            const dob = $('#dob').val();
+            const phone = $('#phoneNo').val();
+
+            const isFnValid = nameRegex.test(fn);
+            const isLnValid = nameRegex.test(ln);
+            const isEmailValid = email.includes(atSymbol) && email.includes('.');
+            const isPwValid = passwordRegex.test(passVal);
+            const isMatch = (passVal === confPass) && (passVal !== "");
+            const isDobValid = dob !== "";
+            const isPhoneValid = phoneRegex.test(phone);
+            const isUserOk = $('#username').hasClass('is-valid');
+
+            // Feedback Logic
+            $('#fnFeedback').text(fn && !isFnValid ? 'Alphabets only' : '').addClass('text-danger');
+            $('#lnFeedback').text(ln && !isLnValid ? 'Alphabets only' : '').addClass('text-danger');
+            $('#emailFeedback').text(email && !isEmailValid ? 'Invalid email format' : '').addClass('text-danger');
+
+            if(passVal.length > 0) {
+                $('#pwStatus').text(isPwValid ? '(Strong)' : '(Weak)')
+                             .toggleClass('text-success', isPwValid)
+                             .toggleClass('text-danger', !isPwValid);
+            } else {
+                $('#pwStatus').text('');
+            }
+
+            if (confPass.length > 0) {
+                if (isMatch) {
+                    $('#matchFeedback').text('Password confirmed!').addClass('text-success').removeClass('text-danger');
+                } else {
+                    $('#matchFeedback').text('Passwords do not match').addClass('text-danger').removeClass('text-success');
+                }
+            } else {
+                $('#matchFeedback').text('');
+            }
+
+            $('#phoneFeedback').text(phone && !isPhoneValid ? 'Digits only (10-15)' : '').addClass('text-danger');
+
+            const formIsValid = isFnValid && isLnValid && isEmailValid && isPwValid && isMatch && isDobValid && isPhoneValid && isUserOk;
+            $('#btnRegister').prop('disabled', !formIsValid);
+        }
+
+        $(document).ready(function() {
+            $('#regForm input').on('keyup change blur', validateForm);
+
+            $('#username').on('blur', function() {
+                const username = $(this).val();
+                if(!username) return;
+
+                $.ajax({
+                    url: '/Candidate/HandleAction',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    // Note: Username availability check now forces type 1 for student prefixing
+                    data: JSON.stringify({ operaid: 5, username: username, userTypeId: 1 }),
+                    success: function(res) {
+                        if (res.isAvailable) {
+                            $('#username').removeClass('is-invalid').addClass('is-valid');
+                            $('#userFeedback').text('Username available!').addClass('text-success').removeClass('text-danger');
+                        } else {
+                            $('#username').removeClass('is-valid').addClass('is-invalid');
+                            $('#userFeedback').text('Username taken for students.').addClass('text-danger').removeClass('text-success');
+                        }
+                        validateForm();
+                    }
+                });
+            });
+
+            $('#btnRegister').on('click', function() {
+                const formData = {
+                    operaid: 2,
+                    firstName: $('#firstName').val(),
+                    lastName: $('#lastName').val(),
+                    email: $('#email').val(),
+                    username: $('#username').val(),
+                    password: $('#password').val(),
+                    dateOfBirth: $('#dob').val(),
+                    phoneNo: $('#phoneNo').val(),
+                    userTypeId: parseInt($('#userTypeId').val()) // Sent as 1
+                };
+
+                $.ajax({
+                    url: '/Candidate/HandleAction',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(res) {
+                        if(res.success) {
+                            alert(res.message);
+                            window.location.href = '/Candidate/Login';
+                        } else {
+                            alert("Error: " + res.message);
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+}

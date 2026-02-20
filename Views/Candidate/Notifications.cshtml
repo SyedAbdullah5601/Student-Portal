@@ -1,0 +1,185 @@
+﻿@{
+    ViewData["Title"] = "Broadcast Notifications";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary"><i class="bi bi-megaphone-fill me-2"></i>System Broadcasts</h2>
+        <span class="badge bg-soft-primary text-primary border border-primary px-3 py-2">Admin Portal</span>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white p-3">
+                    <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i>New Notification</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Target Audience</label>
+                        <select id="notif_TargetRole" class="form-select">
+                            <option value="">All Users (Public)</option>
+                        </select>
+                        <div class="form-text">Who should see this message?</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Title</label>
+                        <input type="text" id="notif_Title" class="form-control" placeholder="e.g., Exam Schedule Updated" maxlength="100" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Message Content</label>
+                        <textarea id="notif_Message" class="form-control" rows="5" placeholder="Write your announcement here..." maxlength="500"></textarea>
+                    </div>
+
+                    <div class="alert alert-info py-2 small">
+                        <i class="bi bi-info-circle me-2"></i>Notifications appear instantly on the target user's dashboard.
+                    </div>
+
+                    <button class="btn btn-primary btn-lg w-100 shadow-sm" onclick="publishNotification()">
+                        <i class="bi bi-send-fill me-2"></i>Publish Broadcast
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-dark text-white p-3">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Broadcast History</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 600px;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Audience</th>
+                                    <th>Title</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="notifHistoryBody">
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">Loading history...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            loadRoles();
+            loadHistory();
+        });
+
+        // 1. Fetch Roles for the Dropdown
+        function loadRoles() {
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ operaid: 10 }), // FetchAllMenus/Roles
+                success: function (res) {
+                    if (res.success) {
+                        let html = '<option value="">All Users (Public)</option>';
+                        res.roles.forEach(r => {
+                            html += `<option value="${r.UserTypeId}">${r.TypeName}</option>`;
+                        });
+                        $('#notif_TargetRole').html(html);
+                    }
+                }
+            });
+        }
+
+        // 2. Publish the Notification
+        function publishNotification() {
+            const data = {
+                operaid: 42, // CreateNotification
+                NotifTitle: $('#notif_Title').val().trim(),
+                NotifMessage: $('#notif_Message').val().trim(),
+                TargetUserTypeId: $('#notif_TargetRole').val() ? parseInt($('#notif_TargetRole').val()) : null
+            };
+
+            if (!data.NotifTitle || !data.NotifMessage) {
+                alert("Please fill in both Title and Message.");
+                return;
+            }
+
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function (res) {
+                    if (res.success) {
+                        alert("Notification Published Successfully!");
+                        $('#notif_Title').val('');
+                        $('#notif_Message').val('');
+                        loadHistory();
+                    } else {
+                        alert("Error: " + res.message);
+                    }
+                }
+            });
+        }
+
+        // 3. Load Broadcast History
+        function loadHistory() {
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ operaid: 44 }), // FetchAllNotifications
+                success: function (res) {
+                    if (res.success) {
+                        let rows = '';
+                        if (res.data.length === 0) {
+                            rows = '<tr><td colspan="4" class="text-center py-4">No notifications found.</td></tr>';
+                        } else {
+                            res.data.forEach(n => {
+                                let badge = n.targetName ? `<span class="badge bg-info text-dark">${n.targetName}</span>` : `<span class="badge bg-secondary">Public</span>`;
+                                rows += `
+                                    <tr>
+                                        <td class="small text-muted">${n.date}</td>
+                                        <td>${badge}</td>
+                                        <td class="fw-bold">${n.title}</td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteNotif(${n.id})">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>`;
+                            });
+                        }
+                        $('#notifHistoryBody').html(rows);
+                    }
+                }
+            });
+        }
+
+        // 4. Delete Notification
+        function deleteNotif(id) {
+            if (confirm("Are you sure you want to remove this notification? It will disappear from all user dashboards.")) {
+                $.ajax({
+                    url: '/Candidate/HandleAction',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ operaid: 43, NotifId: id }), // DeleteNotification
+                    success: function (res) {
+                        if (res.success) {
+                            loadHistory();
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+}

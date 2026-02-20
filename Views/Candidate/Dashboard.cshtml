@@ -1,0 +1,129 @@
+﻿@using Microsoft.AspNetCore.Http
+@{
+    ViewData["Title"] = "Unified Dashboard";
+    int userRole = ViewBag.UserRole ?? 0;
+    int userId = ViewBag.UserId ?? 0;
+}
+
+<div class="container mt-5">
+    @* Stats Row Removed *@
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow border-0">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" width="100" class="rounded-circle shadow-sm">
+                    </div>
+                    <div class="mb-2">
+                        <span id="roleBadge" class="badge rounded-pill px-3 py-2"></span>
+                    </div>
+                    <h4 id="disp_FullName" class="fw-bold">Loading...</h4>
+                    <p class="text-muted" id="disp_Username">&#64;username</p>
+                    <hr>
+                    <div class="text-start px-3">
+                        <p class="small mb-1"><strong>Email:</strong> <span id="disp_Email"></span></p>
+                        <p class="small mb-1"><strong>Phone:</strong> <span id="disp_Phone"></span></p>
+                        <p class="small"><strong>DOB:</strong> <span id="disp_DOB"></span></p>
+                    </div>
+                    <button class="btn btn-outline-danger btn-sm w-100 mt-3" onclick="location.href='/Candidate/Logout'">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 py-2"><i class="bi bi-bell me-2"></i>Recent Notifications</h5>
+                    <span class="badge bg-danger rounded-pill" id="notifCount">0</span>
+                </div>
+                <div class="card-body p-0" style="background-color: #f8f9fa;">
+                    <div id="notificationContainer" class="list-group list-group-flush">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2 text-dark fw-bold">Checking for updates...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            const userId = @userId;
+
+            if (userId === 0) {
+                window.location.href = '/Candidate/Login';
+                return;
+            }
+
+            loadProfile(userId);
+            loadNotifications(userId);
+        });
+
+        // Stats functions removed to clear blue/green cards
+
+        function loadProfile(id) {
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ operaid: 1, candidateId: parseInt(id) }),
+                success: function(res) {
+                    if (res.success) {
+                        const s = res.data;
+                        $('#disp_FullName').text(s.FirstName + " " + s.LastName);
+                        $('#disp_Username').text("@@" + s.Username);
+                        $('#disp_Email').text(s.Email);
+                        $('#disp_Phone').text(s.PhoneNo);
+                        if (s.DateOfBirth) {
+                            $('#disp_DOB').text(new Date(s.DateOfBirth).toLocaleDateString());
+                        }
+                        const roles = { 1: ["Student", "bg-primary"], 2: ["Faculty", "bg-success"], 3: ["Admin", "bg-warning text-dark"] };
+                        const r = roles[s.UserTypeId];
+                        if (r) {
+                            $('#roleBadge').text(r[0]).removeClass().addClass("badge rounded-pill px-3 py-2 " + r[1]);
+                        }
+                    }
+                }
+            });
+        }
+
+                function loadNotifications(userId) {
+            $.ajax({
+                url: '/Candidate/HandleAction',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ operaid: 41, candidateId: parseInt(userId) }),
+                success: function(res) {
+                    if (res.success && res.data.length > 0) {
+                        let html = '';
+                        res.data.forEach(n => {
+                            html += `
+                                <div class="list-group-item p-3 border-start border-4 border-primary mb-1 shadow-sm">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0 fw-bold text-primary p-1 px-2 rounded" style="font-size: 1.1rem; background-color: #e9ecef;">
+                                            ${n.title}
+                                        </h6>
+                                        <small class="badge bg-light text-dark border">${n.date}</small>
+                                    </div>
+                                    <p class="mb-0 text-white" style="line-height: 1.5;">${n.message}</p>
+                                </div>`;
+                        });
+                        $('#notificationContainer').html(html);
+                        $('#notifCount').text(res.data.length);
+                    } else {
+                        $('#notificationContainer').html(`
+                            <div class="text-center py-5">
+                                <i class="bi bi-chat-left-dots text-muted" style="font-size: 2rem;"></i>
+                                <p class="text-dark mt-2">No new updates found.</p>
+                            </div>`);
+                        $('#notifCount').text('0');
+                    }
+                }
+            });
+        }
+    </script>
+}

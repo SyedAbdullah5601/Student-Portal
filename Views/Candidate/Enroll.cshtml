@@ -1,0 +1,83 @@
+﻿@{
+    ViewData["Title"] = "Available Courses";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-journal-check text-primary me-2"></i>Course Enrollment</h2>
+        <span class="badge bg-secondary">Current Semester: Fall 2026</span>
+    </div>
+
+    <div class="row" id="courseList">
+        <div class="text-center mt-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p>Loading available courses...</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            loadAvailableCourses();
+        });
+
+        function loadAvailableCourses() {
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Operaid: 23 }) // FetchCourseDetails
+            })
+            .then(res => res.json())
+            .then(data => {
+                let html = '';
+                data.data.forEach(c => {
+                    html += `
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 shadow-sm border-0">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="text-muted">${c.CourseCode}</h6>
+                                        <span class="badge bg-info text-dark">Sec: ${c.SectionName}</span>
+                                    </div>
+                                    <h5 class="card-title">${c.CourseName}</h5>
+                                    <p class="card-text text-secondary">
+                                        <i class="bi bi-person-workspace me-1"></i> Prof. ${c.FacultyName}
+                                    </p>
+                                </div>
+                                <div class="card-footer bg-white border-0 pb-3">
+                                    ${c.IsEnrolled
+                                        ? `<button class="btn btn-secondary w-100" disabled>Already Enrolled</button>`
+                                        : `<button class="btn btn-primary w-100" onclick="enroll(${c.AssignmentId})">Enroll Now</button>`
+                                    }
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                $("#courseList").html(html || '<div class="alert alert-warning">No courses available for enrollment right now.</div>');
+            });
+        }
+
+        function enroll(id) {
+            if (!confirm("Confirm enrollment in this section?")) return;
+
+            fetch('/Candidate/HandleAction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    Operaid: 2, // Insert
+                    AssignmentId: id
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    loadAvailableCourses(); // Refresh to show "Already Enrolled"
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+    </script>
+}
