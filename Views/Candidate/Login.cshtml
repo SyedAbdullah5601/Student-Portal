@@ -30,22 +30,17 @@
 
                     <div id="otpSection" style="display:none;">
                         <div class="text-center mb-3">
-                            <i class="bi bi-envelope-check fs-1 text-info"></i>
-                            <p class="text-white mt-2">Check your email for a 6-digit code.</p>
+                            <div id="qrContainer" style="display:none;">
+                                <p class="text-white small">Scan this with Google Authenticator</p>
+                                <img id="qrCodeImg" src="" class="img-fluid mb-3" style="border: 10px solid white; border-radius: 10px;" />
+                                <p class="text-info small">Key: <span id="manualKey"></span></p>
+                            </div>
+                            <p id="otpInstruction" class="text-white mt-2">Enter the 6-digit code from your app.</p>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label text-white fw-bold small uppercase">Enter OTP</label>
                             <input type="text" id="otpInput" class="form-control text-center fs-4" placeholder="000000" maxlength="6">
                         </div>
                         <button type="button" id="btnVerifyOtp" class="btn btn-success w-100 py-2 fw-bold">Verify & Login</button>
-
-                        <div class="text-center mt-3">
-                            <button type="button" id="btnResendOtp" class="btn btn-sm btn-outline-info" disabled>
-                                Resend OTP (<span id="timer">30</span>s)
-                            </button>
-                        </div>
-
-                        <button type="button" class="btn btn-link w-100 text-info mt-2" onclick="location.reload()">Back to Login</button>
                     </div>
                 </div>
                 <div class="card-footer text-center border-top border-secondary py-3">
@@ -60,8 +55,6 @@
     <script>
         $(document).ready(function() {
             let currentCandidateId = 0;
-
-            // NEW: Fetch roles from DB on page load
             fetchRoles();
 
             function fetchRoles() {
@@ -69,7 +62,6 @@
                     url: '/Candidate/HandleAction',
                     type: 'POST',
                     contentType: 'application/json',
-                    // Using a manual ID for FetchRoles as discussed, or use your Enum value
                     data: JSON.stringify({ operaid: 50 }),
                     success: function(res) {
                         if (res.success) {
@@ -84,11 +76,9 @@
                     }
                 });
             }
-
-            // Step 1: Initial Credential Check
             $('#btnLogin').on('click', function() {
                 const loginData = {
-                    operaid: 3, // 3 = Login
+                    operaid: 3,
                     userTypeId: parseInt($('#loginUserType').val()),
                     username: $('#loginUser').val(),
                     password: $('#loginPass').val()
@@ -100,22 +90,30 @@
                     contentType: 'application/json',
                     data: JSON.stringify(loginData),
                     success: function(res) {
-                        if (res.success && res.step === "otp") {
+                        if (res.success) {
                             currentCandidateId = res.candidateId;
+                            if (res.step === "setup") {
+                                $('#qrCodeImg').attr('src', res.qrCodeUrl);
+                                $('#manualKey').text(res.manualKey);
+                                $('#qrContainer').show();
+                                $('#otpInstruction').text("Scan the QR code above and enter the 6-digit PIN.");
+                            } else {
+                                $('#qrContainer').hide();
+                                $('#otpInstruction').text("Enter the 6-digit code from your Google Authenticator app.");
+                            }
+
                             $('#loginForm').fadeOut(function() {
                                 $('#otpSection').fadeIn();
                             });
                         } else {
-                            alert(res.message || "Invalid credentials.");
+                            alert(res.message);
                         }
                     }
                 });
             });
-
-            // Step 2: OTP Verification
             $('#btnVerifyOtp').on('click', function() {
                 const otpData = {
-                    operaid: 6, // 6 = VerifyOtp
+                    operaid: 6,
                     candidateId: currentCandidateId,
                     otpCode: $('#otpInput').val()
                 };
@@ -134,8 +132,6 @@
                     }
                 });
             });
-
-            // "Enter" key handlers
             $('#loginPass').on('keypress', function(e) {
                 if(e.which === 13) $('#btnLogin').click();
             });

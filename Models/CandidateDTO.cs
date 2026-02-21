@@ -4,7 +4,7 @@
     Insert = 2,
     Login = 3,
     Verify = 5,
-    VerifyOtp = 6,
+    VerifyAuth = 6,
     FetchLogs = 7,
     ResendOtp = 8,
     FetchAllMenus = 10,
@@ -80,6 +80,8 @@ public class CandidateViewModel
     public string? NotifTitle { get; set; }
     public string? NotifMessage { get; set; }
     public int? TargetUserTypeId { get; set; }
+    public string? QrCodeUrl { get; set; }
+    public string? ManualKey { get; set; }
 }
 public class BulkAttendanceUpdate
 {

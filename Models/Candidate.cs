@@ -38,4 +38,8 @@ public partial class Candidate
     public virtual ICollection<SystemLog> SystemLogs { get; set; } = new List<SystemLog>();
 
     public virtual UserType UserType { get; set; } = null!;
+    public string? TwoFactorSecret { get; set; } 
+    public bool IsTwoFactorEnabled { get; set; } = false;
+    public string? CurrentSessionId { get; set; }
+    public string? LastUsedOtp { get; set; }
 }
